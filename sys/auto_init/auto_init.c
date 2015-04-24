@@ -52,6 +52,10 @@
 #include "vtimer.h"
 #endif
 
+#ifdef MODULE_WTIMER
+#include "wtimer.h"
+#endif
+
 #ifdef MODULE_RTC
 #include "periph/rtc.h"
 #endif
@@ -243,6 +247,10 @@ void auto_init(void)
 #ifdef MODULE_VTIMER
     DEBUG("Auto init vtimer module.\n");
     vtimer_init();
+#endif
+#ifdef MODULE_WTIMER
+    DEBUG("Auto init wtimer module.\n");
+    wtimer_init();
 #endif
 #ifdef MODULE_UART0
     DEBUG("Auto init uart0 module.\n");
