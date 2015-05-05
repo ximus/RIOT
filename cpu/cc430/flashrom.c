@@ -27,48 +27,59 @@ static uint8_t prepare(void);
 static void finish(uint8_t istate);
 static inline void busy_wait(void);
 
-/**
- * @TODO implement this function
- */
-uint8_t flashrom_erase(uint8_t *addr)
-{
-    (void) addr;
 
-    return 0;
+int flashrom_erase(uint8_t *addr)
+{
+    uint8_t istate = prepare();
+
+    FCTL3 = FWKEY;                            // Clear Lock bit
+    busy_wait();
+    FCTL1 = FWKEY+ERASE;                      // Set Erase bit
+    *addr = 0;                                // Dummy write to erase Flash seg
+    busy_wait();
+    FCTL1 = FWKEY;                            // Clear WRT bit
+    FCTL3 = FWKEY+LOCK;                       // Set LOCK bit
+
+    finish(istate);
+    return 1;
 }
 
-/**
- * @TODO implement this function
- */
-uint8_t flashrom_write(uint8_t *dst, const uint8_t *src, size_t size)
+// could take advantage of cc430 long-word and block write modes. Not
+// necessary for current application.
+int flashrom_write(uint8_t *dst, const uint8_t *src, size_t size)
 {
-    (void) dst;
-    (void) src;
-    (void) size;
+    unsigned int i;
 
-    return 0;
+    FCTL3 = FWKEY;                           /* Lock = 0 */
+    busy_wait();
+
+    for (i = size; i > 0; i--) {
+        FCTL1 = FWKEY+WRT;                // Enable byte write
+        *(dst++) = *(src++);              /* program Flash word */
+    }
+
+    busy_wait();
+    FCTL1 = FWKEY;                            // Clear WRT bit
+    FCTL3 = FWKEY+LOCK;                       // Set LOCK bit
+    return 1;
 }
 
-/**
- * @TODO implement this function
- */
+
 static uint8_t prepare(void)
 {
-    return 0;
+    // no need to disable watchdog timer, not enabled by platform
+    return disableIRQ();
 }
 
-/**
- * @TODO implement this function
- */
 void finish(uint8_t istate)
 {
-    (void) istate;
+    restoreIRQ(istate);
 }
 
 static inline void busy_wait(void)
 {
     /* Wait for BUSY = 0, not needed unless run from RAM */
-    while (FCTL3 & 0x0001) {
+    while (FCTL3 & BUSY) {
         nop();
     }
 }
