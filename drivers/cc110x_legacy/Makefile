@@ -1,5 +1,5 @@
 DIRS = spi
-ifneq (,$(filter chronos,$(BOARD)))
+ifneq (,$(filter cc430,$(CPU)))
 	DIRS =
 endif
 
