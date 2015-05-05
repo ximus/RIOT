@@ -160,7 +160,9 @@ extern "C" {
  * @brief The size of the message queue between driver and transceiver (must be
  *        power of two
  */
-#define TRANSCEIVER_MSG_BUFFER_SIZE     (32)
+// PERF mod: 32 => 8
+#define TRANSCEIVER_MSG_BUFFER_SIZE     (8)
+// #define TRANSCEIVER_MSG_BUFFER_SIZE     (32)
 
 /**
  * @brief The maximum number of ignored addresses
