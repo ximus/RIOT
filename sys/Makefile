@@ -17,8 +17,8 @@ ifneq (,$(filter nomac,$(USEMODULE)))
     DIRS += net/link_layer/nomac
 endif
 ifneq (,$(filter transport_layer,$(USEMODULE)))
-	USEMODULE += udp
-	USEMODULE += tcp
+    USEMODULE += udp
+    USEMODULE += tcp
 endif
 ifneq (,$(filter socket_base,$(USEMODULE)))
     DIRS += net/transport_layer/socket_base
@@ -45,7 +45,7 @@ ifneq (,$(filter rpl,$(USEMODULE)))
     DIRS += net/routing/rpl
 endif
 ifneq (,$(filter routing,$(USEMODULE)))
-	DIRS += net/routing
+    DIRS += net/routing
 endif
 ifneq (,$(filter aodvv2,$(USEMODULE)))
     DIRS += net/routing/aodvv2
@@ -61,6 +61,12 @@ ifneq (,$(filter ccn_lite_client,$(USEMODULE)))
 endif
 ifneq (,$(filter oneway_malloc,$(USEMODULE)))
     DIRS += oneway-malloc
+endif
+ifneq (,$(filter ng_icmpv6,$(USEMODULE)))
+    DIRS += net/network_layer/ng_icmpv6
+endif
+ifneq (,$(filter ng_icmpv6_echo,$(USEMODULE)))
+    DIRS += net/network_layer/ng_icmpv6/echo
 endif
 ifneq (,$(filter ng_ipv6,$(USEMODULE)))
     DIRS += net/network_layer/ng_ipv6
@@ -80,11 +86,17 @@ endif
 ifneq (,$(filter ng_inet_csum,$(USEMODULE)))
     DIRS += net/crosslayer/ng_inet_csum
 endif
+ifneq (,$(filter ng_ndp,$(USEMODULE)))
+    DIRS += net/network_layer/ng_ndp
+endif
 ifneq (,$(filter ng_netapi,$(USEMODULE)))
     DIRS += net/crosslayer/ng_netapi
 endif
 ifneq (,$(filter ng_netif,$(USEMODULE)))
     DIRS += net/crosslayer/ng_netif
+endif
+ifneq (,$(filter ng_netif_hdr,$(USEMODULE)))
+    DIRS += net/crosslayer/ng_netif/hdr
 endif
 ifneq (,$(filter ng_netreg,$(USEMODULE)))
     DIRS += net/crosslayer/ng_netreg
@@ -127,6 +139,15 @@ ifneq (,$(filter fib,$(USEMODULE)))
 endif
 ifneq (,$(filter ng_udp,$(USEMODULE)))
     DIRS += net/transport_layer/ng_udp
+endif
+ifneq (,$(filter hwtimer_compat,$(USEMODULE)))
+    DIRS += compat/hwtimer
+endif
+ifneq (,$(filter log_%,$(USEMODULE)))
+    DIRS += log
+endif
+ifneq (,$(filter cpp11-compat,$(USEMODULE)))
+    DIRS += cpp11-compat
 endif
 
 DIRS += $(dir $(wildcard $(addsuffix /Makefile, ${USEMODULE})))

@@ -48,6 +48,20 @@ ifneq (,$(filter sixlowpan,$(USEMODULE)))
   USEMODULE += vtimer
 endif
 
+ifneq (,$(filter ng_netif,$(USEMODULE)))
+  USEMODULE += ng_netbase
+endif
+
+ifneq (,$(filter ng_nomac,$(USEMODULE)))
+  USEMODULE += ng_netbase
+endif
+
+ifneq (,$(filter ng_sixlowpan_default,$(USEMODULE)))
+  USEMODULE += ng_ipv6_default
+  USEMODULE += ng_sixlowpan
+  USEMODULE += ng_sixlowpan_frag
+endif
+
 ifneq (,$(filter ng_sixlowpan_frag,$(USEMODULE)))
   USEMODULE += ng_sixlowpan
   USEMODULE += vtimer
@@ -62,6 +76,35 @@ endif
 ifneq (,$(filter ng_sixlowpan_ctx,$(USEMODULE)))
   USEMODULE += ng_ipv6_addr
   USEMODULE += vtimer
+endif
+
+ifneq (,$(filter ng_ipv6_default,$(USEMODULE)))
+  USEMODULE += ng_ipv6
+  USEMODULE += ng_icmpv6
+  USEMODULE += ng_ndp
+endif
+
+ifneq (,$(filter ng_ipv6_router_default,$(USEMODULE)))
+  USEMODULE += ng_ipv6_router
+  USEMODULE += ng_icmpv6
+  USEMODULE += ng_ndp
+endif
+
+ifneq (,$(filter ng_ndp,$(USEMODULE)))
+  USEMODULE += ng_icmpv6
+  USEMODULE += random
+  USEMODULE += timex
+  USEMODULE += vtimer
+endif
+
+ifneq (,$(filter ng_icmpv6_echo,$(USEMODULE)))
+  USEMODULE += ng_icmpv6
+  USEMODULE += ng_netbase
+endif
+
+ifneq (,$(filter ng_icmpv6,$(USEMODULE)))
+  USEMODULE += ng_inet_csum
+  USEMODULE += ng_ipv6
 endif
 
 ifneq (,$(filter ng_ipv6_hdr,$(USEMODULE)))
@@ -100,6 +143,7 @@ ifneq (,$(filter ng_netbase,$(USEMODULE)))
   USEMODULE += ng_netapi
   USEMODULE += ng_netreg
   USEMODULE += ng_netif
+  USEMODULE += ng_netif_hdr
   USEMODULE += ng_pktbuf
 endif
 
@@ -204,4 +248,15 @@ endif
 
 ifneq (,$(filter ng_at86rf2%,$(USEMODULE)))
   USEMODULE += ng_at86rf2xx
+endif
+
+# if any log_* is used, also use LOG pseudomodule
+ifneq (,$(filter log_%,$(USEMODULE)))
+  USEMODULE += log
+endif
+
+ifneq (,$(filter cpp11-compat,$(USEMODULE)))
+  USEMODULE += vtimer
+  USEMODULE += timex
+  FEATURES_REQUIRED += cpp
 endif

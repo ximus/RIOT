@@ -72,7 +72,7 @@ static uint16_t _calc_csum(ng_pktsnip_t *hdr, ng_pktsnip_t *pseudo_hdr,
         payload = payload->next;
     }
     /* process applicable UDP header bytes */
-    csum = ng_inet_csum(csum, (uint8_t *)hdr->data, 6);
+    csum = ng_inet_csum(csum, (uint8_t *)hdr->data, sizeof(ng_udp_hdr_t));
 
     switch (pseudo_hdr->type) {
 #ifdef MODULE_NG_IPV6
@@ -91,9 +91,8 @@ static uint16_t _calc_csum(ng_pktsnip_t *hdr, ng_pktsnip_t *pseudo_hdr,
 
 static void _receive(ng_pktsnip_t *pkt)
 {
-    ng_pktsnip_t *udp;
+    ng_pktsnip_t *udp, *ipv6;
     ng_udp_hdr_t *hdr;
-    uint16_t csum;
     uint32_t port;
     ng_netreg_entry_t *sendto;
 
@@ -113,9 +112,10 @@ static void _receive(ng_pktsnip_t *pkt)
     }
     hdr = (ng_udp_hdr_t *)udp->data;
 
+    LL_SEARCH_SCALAR(pkt, ipv6, type, NG_NETTYPE_IPV6);
+
     /* validate checksum */
-    csum = _calc_csum(udp, udp->next, pkt);     /* TODO: what about extension headers? */
-    if (byteorder_ntohs(hdr->checksum) != csum) {
+    if (_calc_csum(udp, ipv6, pkt)) {
         DEBUG("udp: received packet with invalid checksum, dropping it\n");
         ng_pktbuf_release(pkt);
         return;
@@ -154,7 +154,7 @@ static void _send(ng_pktsnip_t *pkt)
     }
     hdr = (ng_udp_hdr_t *)udp_snip->data;
     /* fill in size field */
-    hdr->length = byteorder_htons(sizeof(ng_udp_hdr_t) + ng_pkt_len(udp_snip));
+    hdr->length = byteorder_htons(ng_pkt_len(udp_snip));
 
     /* and forward packet to the network layer */
     sendto = ng_netreg_lookup(pkt->type, NG_NETREG_DEMUX_CTX_ALL);
@@ -263,8 +263,8 @@ int ng_udp_init(void)
     /* check if thread is already running */
     if (_pid == KERNEL_PID_UNDEF) {
         /* start UDP thread */
-        _pid = thread_create(_stack, sizeof(_stack), NG_UDP_PRIO, 0,
-                             _event_loop, NULL, "udp");
+        _pid = thread_create(_stack, sizeof(_stack), NG_UDP_PRIO,
+                             CREATE_STACKTEST, _event_loop, NULL, "udp");
     }
     return _pid;
 }

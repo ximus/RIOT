@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Freie Universität Berlin
+ * Copyright (C) 2010,2015 Freie Universität Berlin
  * Copyright (C) 2010 Kaspar Schleiser
  * Copyright (C) 2013 INRIA
  *
@@ -27,6 +27,10 @@
  * @{
  *
  * @file        auto_init.h
+ *
+ * @author      Kaspar Schleiser <kaspar@schleiser.de>
+ * @author      Oliver Hahm <oliver.hahm@inria.fr>
+ * @author      Hauke Petersen <hauke.petersen@fu-berlin.de>
  */
 
 #ifndef AUTO_INIT_H
