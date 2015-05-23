@@ -69,7 +69,7 @@ void set_rx_mode(uart_mode_t mode);
 // Runs
 // defaults to char mode when no block transfer is active
 // defaults to 112000 bps
-void uart_init(void (*rx_callback)(uint8_t))
+void uart_init(void)
 {
     // SMCLK, parity off, LSB-first, 8N1, a uart
     /*
@@ -92,7 +92,10 @@ void uart_init(void (*rx_callback)(uint8_t))
     UCA0CTL1 &= ~UCSWRST;
 
     set_rx_mode(CHAR);
+}
 
+void set_char_receive_callback(void (*rx_callback)(uint8_t))
+{
     char_receive_callback = rx_callback;
 }
 

@@ -2,7 +2,7 @@
  * Initialize DMA. "rx_callback" will be called for each
  * UART character received when not receiving in block mode.
  */
-void uart_init(void (*rx_callback)(uint8_t));
+void uart_init(void);
 
 /**
  * nomenclature: block basically means dma, should
