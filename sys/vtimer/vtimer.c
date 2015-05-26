@@ -38,8 +38,8 @@
 #define VTIMER_THRESHOLD 20UL
 #define VTIMER_BACKOFF 10UL
 
-#define SECONDS_PER_TICK (4096U)
-#define MICROSECONDS_PER_TICK (4096UL * 1000000)
+#define SECONDS_PER_TICK (1U)
+#define MICROSECONDS_PER_TICK (1UL * 1000000)
 
 /*
  * This is a workaround for missing support in clang on OSX,
@@ -286,7 +286,7 @@ static int vtimer_set(vtimer_t *timer)
 
 void vtimer_now(timex_t *out)
 {
-    uint32_t us = HWTIMER_TICKS_TO_US(hwtimer_now() - longterm_tick_start);
+    uint32_t us = HWTIMER_TICKS_TO_US(hwtimer_now());
     uint32_t us_per_s = 1000ul * 1000ul;
 
     out->seconds = seconds + us / us_per_s;
