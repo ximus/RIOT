@@ -20,6 +20,7 @@
 #include "byteorder.h"
 #include "net/ng_icmpv6.h"
 #include "net/ng_ipv6.h"
+#include "net/ng_ipv6/ext/rh.h"
 #include "net/ng_netbase.h"
 #include "random.h"
 #include "utlist.h"
@@ -30,6 +31,10 @@
 
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
+
+#if (ENABLE_DEBUG)
+static char addr_str[NG_IPV6_ADDR_MAX_STR_LEN];
+#endif
 
 static ng_pktqueue_node_t _pkt_nodes[NG_IPV6_NC_SIZE * 2];
 static ng_ipv6_nc_t *_last_router = NULL;   /* last router chosen as default
@@ -201,7 +206,7 @@ void ng_ndp_retrans_nbr_sol(ng_ipv6_nc_t *nc_entry)
         ng_ipv6_addr_t dst;
 
         DEBUG("ndp: Retransmit neighbor solicitation for %s\n",
-              ng_ipv6_addr_to_str(addr_str, nc_entry->ipv6_addr, sizeof(addr_str)));
+              ng_ipv6_addr_to_str(addr_str, &nc_entry->ipv6_addr, sizeof(addr_str)));
 
         /* retransmit neighbor solicatation */
         if (ng_ipv6_nc_get_state(nc_entry) == NG_IPV6_NC_STATE_INCOMPLETE) {
@@ -216,10 +221,8 @@ void ng_ndp_retrans_nbr_sol(ng_ipv6_nc_t *nc_entry)
 
         if (nc_entry->iface == KERNEL_PID_UNDEF) {
             timex_t t = { 0, NG_NDP_RETRANS_TIMER };
-            kernel_pid_t *ifs;
-            size_t ifnum;
-
-            ifs = ng_netif_get(&ifnum);
+            kernel_pid_t ifs[NG_NETIF_NUMOF];
+            size_t ifnum = ng_netif_get(ifs);
 
             for (size_t i = 0; i < ifnum; i++) {
                 _send_nbr_sol(ifs[i], &nc_entry->ipv6_addr, &dst);
@@ -247,7 +250,7 @@ void ng_ndp_retrans_nbr_sol(ng_ipv6_nc_t *nc_entry)
          * entry is */
 
         DEBUG("ndp: Remove nc entry %s for interface %" PRIkernel_pid "\n",
-              ng_ipv6_addr_to_str(addr_str, nc_entry->ipv6_addr, sizeof(addr_str)),
+              ng_ipv6_addr_to_str(addr_str, &nc_entry->ipv6_addr, sizeof(addr_str)),
               nc_entry->iface);
 
         while ((queue_node = ng_pktqueue_remove_head(&nc_entry->pkts))) {
@@ -337,8 +340,14 @@ kernel_pid_t ng_ndp_next_hop_l2addr(uint8_t *l2addr, uint8_t *l2addr_len,
     ng_ipv6_addr_t *next_hop_ip = NULL, *prefix = NULL;
 #ifdef MODULE_FIB
     size_t next_hop_size;
+#endif
 
-    if ((fib_get_next_hop(&iface, (uint8_t *)next_hop_ip, &next_hop_size,
+#ifdef MODULE_NG_IPV6_EXT_RH
+    next_hop_ip = ng_ipv6_ext_rh_next_hop(hdr);
+#endif
+#ifdef MODULE_FIB
+    if ((next_hop_ip == NULL) &&
+        (fib_get_next_hop(&iface, (uint8_t *)next_hop_ip, &next_hop_size,
                           (uint8_t *)dst, sizeof(ng_ipv6_addr_t),
                           0) < 0) || (next_hop_ip != sizeof(ng_ipv6_addr_t))) {
         next_hop_ip = NULL;
@@ -409,10 +418,8 @@ kernel_pid_t ng_ndp_next_hop_l2addr(uint8_t *l2addr, uint8_t *l2addr_len,
 
             if (iface == KERNEL_PID_UNDEF) {
                 timex_t t = { 0, NG_NDP_RETRANS_TIMER };
-                kernel_pid_t *ifs;
-                size_t ifnum;
-
-                ifs = ng_netif_get(&ifnum);
+                kernel_pid_t ifs[NG_NETIF_NUMOF];
+                size_t ifnum = ng_netif_get(ifs);
 
                 for (size_t i = 0; i < ifnum; i++) {
                     _send_nbr_sol(ifs[i], next_hop_ip, &dst_sol);

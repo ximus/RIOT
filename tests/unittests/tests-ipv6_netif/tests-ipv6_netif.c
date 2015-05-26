@@ -9,7 +9,7 @@
 /**
  * @{
  *
- * @file    tests-ipv6_netif.c
+ * @file
  */
 #include <errno.h>
 #include <stdint.h>
@@ -80,19 +80,37 @@ static void test_ipv6_netif_add__success(void)
 
 static void test_netif_add__success_with_ipv6(void)
 {
-    kernel_pid_t *pids;
+    kernel_pid_t pids[NG_NETIF_NUMOF];
     size_t pid_num;
     ng_ipv6_netif_t *entry;
     ng_ipv6_addr_t exp_addr = NG_IPV6_ADDR_ALL_NODES_LINK_LOCAL;
 
     ng_netif_add(DEFAULT_TEST_NETIF);
 
-    TEST_ASSERT_NOT_NULL((pids = ng_netif_get(&pid_num)));
+    TEST_ASSERT_EQUAL_INT(1, (pid_num = ng_netif_get(pids)));
     TEST_ASSERT_EQUAL_INT(1, pid_num);
     TEST_ASSERT_EQUAL_INT(DEFAULT_TEST_NETIF, pids[0]);
     TEST_ASSERT_NOT_NULL((entry = ng_ipv6_netif_get(DEFAULT_TEST_NETIF)));
     TEST_ASSERT_EQUAL_INT(DEFAULT_TEST_NETIF, entry->pid);
     TEST_ASSERT_EQUAL_STRING((char *)exp_addr.u8, (char *)entry->addrs[0].addr.u8);
+}
+
+static void test_ipv6_netif_add__despite_free_entry(void)
+{
+    /* Tests for possible duplicates as described in http://github.com/RIOT-OS/RIOT/issues/2965 */
+
+    ng_ipv6_netif_add(OTHER_TEST_NETIF);
+    test_ipv6_netif_add__success(); /* adds DEFAULT_TEST_NETIF as interface */
+
+    /* create space by removing first entry */
+    ng_ipv6_netif_remove(OTHER_TEST_NETIF);
+
+    /* add DEFAULT_TEST_NETIF yet again and remove it */
+    test_ipv6_netif_add__success();
+    ng_ipv6_netif_remove(DEFAULT_TEST_NETIF);
+
+    /* see if there's a duplicate left */
+    TEST_ASSERT_NULL(ng_ipv6_netif_get(DEFAULT_TEST_NETIF));
 }
 
 static void test_ipv6_netif_remove__not_allocated(void)
@@ -167,6 +185,33 @@ static void test_ipv6_netif_add_addr__success(void)
     test_ipv6_netif_add__success(); /* adds DEFAULT_TEST_NETIF as interface */
 
     TEST_ASSERT_NOT_NULL(ng_ipv6_netif_add_addr(DEFAULT_TEST_NETIF, &addr, DEFAULT_TEST_PREFIX_LEN, 0));
+}
+
+static void test_ipv6_netif_add_addr__despite_free_entry(void)
+{
+    /* Tests for possible duplicates as described in http://github.com/RIOT-OS/RIOT/issues/2965 */
+    ng_ipv6_addr_t *entry_1;
+    ng_ipv6_addr_t *entry_2;
+
+    ng_ipv6_addr_t default_addr = DEFAULT_TEST_IPV6_ADDR;
+    ng_ipv6_addr_t ll_addr;
+
+    test_ipv6_netif_add__success(); /* adds DEFAULT_TEST_NETIF as interface */
+
+    /* add addresses to the interface */
+    TEST_ASSERT_NOT_NULL((entry_1 = ng_ipv6_netif_add_addr(DEFAULT_TEST_NETIF, &default_addr, DEFAULT_TEST_PREFIX_LEN, 0)));
+
+    /* remove default_addr, but not the others (corresponding lla, solicited-node addr)
+     * that came with it */
+    ng_ipv6_netif_remove_addr(DEFAULT_TEST_NETIF, &default_addr);
+
+    /* create and re-add corresponding lla and check that it hasn't taken
+     * the old place of default_addr*/
+    ll_addr.u64[1] = default_addr.u64[1];
+    ng_ipv6_addr_set_link_local_prefix(&ll_addr);
+    TEST_ASSERT_NOT_NULL((entry_2 = ng_ipv6_netif_add_addr(DEFAULT_TEST_NETIF, &ll_addr, DEFAULT_TEST_PREFIX_LEN, 0)));
+
+    TEST_ASSERT(entry_1 != entry_2);
 }
 
 static void test_ipv6_netif_remove_addr__not_allocated(void)
@@ -404,6 +449,19 @@ static void test_ipv6_netif_find_best_src_addr__success(void)
     TEST_ASSERT_EQUAL_INT(true, ng_ipv6_addr_equal(out, &ll_addr1));
 }
 
+static void test_ipv6_netif_find_best_src_addr__multicast_input(void)
+{
+    ng_ipv6_addr_t mc_addr = NG_IPV6_ADDR_ALL_ROUTERS_LINK_LOCAL;
+    ng_ipv6_addr_t *out = NULL;
+
+    /* Adds DEFAULT_TEST_NETIF as interface and to it fe80::1, fe80::2 and ff02::1 */
+    test_ipv6_netif_find_best_src_addr__success();
+
+    TEST_ASSERT_NOT_NULL((out = ng_ipv6_netif_find_best_src_addr(DEFAULT_TEST_NETIF, &mc_addr)));
+    TEST_ASSERT_EQUAL_INT(false, ng_ipv6_addr_equal(&mc_addr, out));
+    TEST_ASSERT_EQUAL_INT(false, ng_ipv6_addr_is_unspecified(out));
+}
+
 static void test_ipv6_netif_addr_is_non_unicast__unicast(void)
 {
     ng_ipv6_addr_t addr = DEFAULT_TEST_IPV6_ADDR;
@@ -462,6 +520,7 @@ Test *tests_ipv6_netif_tests(void)
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_ipv6_netif_add__success),
         new_TestFixture(test_netif_add__success_with_ipv6),
+        new_TestFixture(test_ipv6_netif_add__despite_free_entry),
         new_TestFixture(test_ipv6_netif_remove__not_allocated),
         new_TestFixture(test_ipv6_netif_remove__success),
         new_TestFixture(test_ipv6_netif_get__empty),
@@ -471,6 +530,7 @@ Test *tests_ipv6_netif_tests(void)
         new_TestFixture(test_ipv6_netif_add_addr__addr_unspecified),
         new_TestFixture(test_ipv6_netif_add_addr__full),
         new_TestFixture(test_ipv6_netif_add_addr__success),
+        new_TestFixture(test_ipv6_netif_add_addr__despite_free_entry),
         new_TestFixture(test_ipv6_netif_remove_addr__not_allocated),
         new_TestFixture(test_ipv6_netif_remove_addr__success),
         new_TestFixture(test_ipv6_netif_reset_addr__success),
@@ -488,6 +548,7 @@ Test *tests_ipv6_netif_tests(void)
         new_TestFixture(test_ipv6_netif_match_prefix__success3),
         new_TestFixture(test_ipv6_netif_find_best_src_addr__no_unicast),
         new_TestFixture(test_ipv6_netif_find_best_src_addr__success),
+        new_TestFixture(test_ipv6_netif_find_best_src_addr__multicast_input),
         new_TestFixture(test_ipv6_netif_addr_is_non_unicast__unicast),
         new_TestFixture(test_ipv6_netif_addr_is_non_unicast__anycast),
         new_TestFixture(test_ipv6_netif_addr_is_non_unicast__multicast1),

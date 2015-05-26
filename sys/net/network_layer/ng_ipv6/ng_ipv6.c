@@ -78,7 +78,18 @@ void ng_ipv6_demux(kernel_pid_t iface, ng_pktsnip_t *pkt, uint8_t nh)
         case NG_PROTNUM_ICMPV6:
             ng_icmpv6_demux(iface, pkt);
             break;
-        /* TODO: add extension header handling */
+        case NG_PROTNUM_IPV6_EXT_HOPOPT:
+        case NG_PROTNUM_IPV6_EXT_DST:
+        case NG_PROTNUM_IPV6_EXT_RH:
+        case NG_PROTNUM_IPV6_EXT_FRAG:
+        case NG_PROTNUM_IPV6_EXT_AH:
+        case NG_PROTNUM_IPV6_EXT_ESP:
+        case NG_PROTNUM_IPV6_EXT_MOB:
+            if (!ng_ipv6_ext_demux(iface, pkt, nh)) {
+                DEBUG("ipv6: unable to parse extension headers.\n");
+                ng_pktbuf_release(pkt);
+                return;
+            }
         case NG_PROTNUM_IPV6:
             _decapsulate(pkt);
             break;
@@ -326,12 +337,11 @@ static void _send_multicast(kernel_pid_t iface, ng_pktsnip_t *pkt,
                             bool prep_hdr)
 {
     ng_pktsnip_t *netif;
-    kernel_pid_t *ifs;
-    size_t ifnum;
+    kernel_pid_t ifs[NG_NETIF_NUMOF];
 
     if (iface == KERNEL_PID_UNDEF) {
         /* get list of interfaces */
-        ifs = ng_netif_get(&ifnum);
+        size_t ifnum = ng_netif_get(ifs);
 
         /* throw away packet if no one is interested */
         if (ifnum == 0) {
