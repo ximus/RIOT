@@ -22,7 +22,13 @@
  */
 
 #include <stdio.h>
+#ifdef MSPGCC
 #include <legacymsp430.h>
+#else
+#define interrupt(x) void __attribute__((interrupt (x)))
+#define eint()  __eint()
+#define dint()  __dint()
+#endif
 
 #include <msp430.h>
 #include "board.h"

@@ -68,7 +68,7 @@ void finish(uint8_t istate)
 static inline void busy_wait(void)
 {
     /* Wait for BUSY = 0, not needed unless run from RAM */
-    while (FCTL3 & 0x0001) {
-        nop();
+    while (FCTL3 & BUSY) {
+        __no_operation();
     }
 }
