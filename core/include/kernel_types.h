@@ -40,7 +40,7 @@
 #       endif
 #   endif
 
-#   ifdef MODULE_MSP430_COMMON
+#   ifdef MSPGCC
         typedef signed ssize_t;
 #   endif
 #endif

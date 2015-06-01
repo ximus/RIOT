@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <legacymsp430.h>
 #include "irq.h"
 #include "cpu.h"
 #include "cc430-rtc.h"

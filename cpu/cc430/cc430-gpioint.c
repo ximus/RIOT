@@ -15,7 +15,6 @@
  */
 
 #include <stdlib.h>
-#include <legacymsp430.h>
 #include "gpioint.h"
 #include "bitarithm.h"
 #include "cpu.h"

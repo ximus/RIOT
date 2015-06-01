@@ -125,6 +125,9 @@ endif
 ifneq (,$(filter ng_sixlowpan_frag,$(USEMODULE)))
     DIRS += net/network_layer/ng_sixlowpan/frag
 endif
+ifneq (,$(filter ng_sixlowpan_iphc,$(USEMODULE)))
+    DIRS += net/network_layer/ng_sixlowpan/iphc
+endif
 ifneq (,$(filter ng_sixlowpan_netif,$(USEMODULE)))
     DIRS += net/network_layer/ng_sixlowpan/netif
 endif
@@ -160,6 +163,9 @@ ifneq (,$(filter log_%,$(USEMODULE)))
 endif
 ifneq (,$(filter cpp11-compat,$(USEMODULE)))
     DIRS += cpp11-compat
+endif
+ifneq (,$(filter ng_netdev_eth,$(USEMODULE)))
+    DIRS += net/link_layer/ng_netdev_eth
 endif
 
 DIRS += $(dir $(wildcard $(addsuffix /Makefile, ${USEMODULE})))

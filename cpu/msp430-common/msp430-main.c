@@ -104,8 +104,13 @@ init_ports(void)
 
 /*---------------------------------------------------------------------------*/
 /* msp430-ld may align _end incorrectly. Workaround in cpu_init. */
+#if MSPGCC
 extern int _end;        /* Not in sys/unistd.h */
 static char *cur_break = (char *) &_end;
+#else
+extern int end;        /* Not in sys/unistd.h */
+static char *cur_break = (char *) &end;
+#endif
 
 void msp430_cpu_init(void)
 {

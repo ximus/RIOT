@@ -22,27 +22,43 @@
  */
 
 #include <stdio.h>
+#ifdef MSPGCC
 #include <legacymsp430.h>
+#else
+#define interrupt(x) void __attribute__((interrupt (x)))
+#define eint()  __eint()
+#define dint()  __dint()
+#endif
 
 #include <msp430.h>
 #include "board.h"
 
 #include "sched.h"
 #include "msp430_types.h"
-#include "cpu-conf.h"
+#include "cpu_conf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief   Wordsize in bit for MSP430 platforms
+ */
 #define WORDSIZE 16
 
+/**
+ * @brief   The current ISR state (inside or not)
+ */
 extern volatile int __inISR;
+
+/**
+ * @brief   Memory used as stack for the interrupt context
+ */
 extern char __isr_stack[MSP430_ISR_STACK_SIZE];
 
-/*#define eINT()  eint() */
-/*#define dINT()  dint() */
-
+/**
+ * @brief   Save the current thread context from inside an ISR
+ */
 inline void __save_context_isr(void)
 {
     __asm__("push r15");
@@ -61,6 +77,9 @@ inline void __save_context_isr(void)
     __asm__("mov.w r1,%0" : "=r"(sched_active_thread->sp));
 }
 
+/**
+ * @brief   Restore the thread context from inside an ISR
+ */
 inline void __restore_context_isr(void)
 {
     __asm__("mov.w %0,r1" : : "m"(sched_active_thread->sp));
@@ -79,6 +98,9 @@ inline void __restore_context_isr(void)
     __asm__("pop r15");
 }
 
+/**
+ * @brief   Run this code on entering interrupt routines
+ */
 inline void __enter_isr(void)
 {
     __save_context_isr();
@@ -86,6 +108,9 @@ inline void __enter_isr(void)
     __inISR = 1;
 }
 
+/**
+ * @brief   Run this code on exiting interrupt routines
+ */
 inline void __exit_isr(void)
 {
     __inISR = 0;
@@ -98,12 +123,20 @@ inline void __exit_isr(void)
     __asm__("reti");
 }
 
+/**
+ * @brief   Save the current context on the stack
+ */
 inline void __save_context(void)
 {
     __asm__("push r2"); /* save SR */
     __save_context_isr();
 }
 
+/**
+ * @brief   Restore the thread context from the stack
+ *
+ * @param[in] irqen     former interrupt state
+ */
 inline void __restore_context(unsigned int irqen)
 {
     __restore_context_isr();
@@ -123,6 +156,9 @@ inline void __restore_context(unsigned int irqen)
     __asm__("reti");
 }
 
+/**
+ * @brief   Enable interrupts
+ */
 inline void eINT(void)
 {
     /*    puts("+"); */
@@ -133,6 +169,9 @@ inline void eINT(void)
           impose silently after messing with the GIE bit, DO NOT REMOVE IT! */
 }
 
+/**
+ * @brief   Disable interrupts
+ */
 inline void dINT(void)
 {
     /*    puts("-"); */
@@ -143,8 +182,17 @@ inline void dINT(void)
           impose silently after messing with the GIE bit, DO NOT REMOVE IT! */
 }
 
+/**
+ * @brief   Check if currently inside an interrupt routine
+ *
+ * @return  0 if not in interrupt context
+ * @return  1 if in interrupt context
+ */
 int inISR(void);
 
+/**
+ * @brief   Initialize the cpu
+ */
 void msp430_cpu_init(void);
 
 #ifdef __cplusplus

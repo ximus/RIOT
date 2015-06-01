@@ -1,3 +1,10 @@
 INCLUDES += -I$(RIOTBASE)/cpu/msp430-common/include/
 
 DEFAULT_MODULE += oneway_malloc
+
+ifeq ($(USE_MSPGCC),1)
+  export PREFIX ?= msp430-
+  CFLAGS += -DMSPGCC
+else
+  export PREFIX ?= msp430-elf-
+endif
