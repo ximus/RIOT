@@ -34,6 +34,8 @@ void board_init(void)
     cc430_clocks_init();
     cc430_io_init();
 
+    uart_init();
+
     /* enable interrupts */
     _BIS_SR(GIE);
 }
