@@ -1,8 +1,5 @@
 void cc430_clocks_init(void)
 {
-    volatile uint16_t i;
-    volatile unsigned char *ptr;
-
     volatile uint16_t delay = 100;
 
     uint16_t selref_32k;
