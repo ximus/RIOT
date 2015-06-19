@@ -1,6 +1,6 @@
 void cc430_clocks_init(void)
 {
-    volatile uint16_t delay = 100;
+    volatile uint16_t delay;
 
     uint16_t selref_32k;
     uint16_t sela_32k;
