@@ -14,6 +14,7 @@
 #include "board.h"
 #include "port_conf.h"
 #include "cpu.h"
+#include "leds.h"
 #include "irq.h"
 #include "debug.h"
 #include "cc430f5137.h"
@@ -34,6 +35,7 @@ void board_init(void)
     cc430_clocks_init();
     cc430_io_init();
 
+    leds_init();
     uart_init();
 
     /* enable interrupts */
