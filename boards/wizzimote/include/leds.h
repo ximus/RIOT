@@ -12,6 +12,8 @@
 #define LED_YELLOW_ON  (P3OUT |= BIT7)
 #define LED_YELLOW_OFF (P3OUT &= ~BIT7)
 
+#define NUM_LEDS (3)
+
 #define GREEN  BIT1
 #define YELLOW BIT2
 #define RED    BIT3
