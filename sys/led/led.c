@@ -6,10 +6,14 @@
  * an expensive operation, let's keep the code clearer.
  */
 
-struct
+#if NUM_LEDS > 8
+#error "led: module supports 8 leds at most"
+#endif
+
+typedef struct client_t
 {
     kernel_pid_t pid;
-    client_t *prev; /* linked list */
+    struct client_t *prev; /* linked list */
     uint8_t state;
 }
 client_t;
@@ -112,6 +116,8 @@ int led_aquire(void)
     /* NOTE: this should be an atomic operation */
     client->prev = cur_client;
     cur_client = client;
+
+    return 0;
 }
 
 int led_release(void)
@@ -123,7 +129,7 @@ int led_release(void)
         return -1;
     }
 
-    client.pid = NULL;
+    client->pid = NULL;
 
     /**
      * if the client is the list head, then this should be an
@@ -133,6 +139,8 @@ int led_release(void)
     {
         cleanup_clients();
     }
+
+    return 0;
 }
 
 int led_on(uint8_t leds)
@@ -146,6 +154,8 @@ int led_on(uint8_t leds)
 
     client->state |= leds;
     apply_state(client->state);
+
+    return 0;
 }
 
 int led_off(uint8_t leds)
@@ -159,4 +169,21 @@ int led_off(uint8_t leds)
 
     client->state &= ~leds;
     apply_state(client->state);
+
+    return 0;
+}
+
+int led_toggle(uint8_t leds)
+{
+    client_t *client = find_client();
+
+    if (client == NULL)
+    {
+        return -1;
+    }
+
+    client->state ^= leds;
+    apply_state(client->state);
+
+    return 0;
 }

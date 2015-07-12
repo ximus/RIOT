@@ -34,5 +34,6 @@ int led_release(void);
 
 int led_on(uint8_t);
 int led_off(uint8_t);
+int led_toggle(uint8_t);
 
 #endif /* end of include guard: LED_H__ */
