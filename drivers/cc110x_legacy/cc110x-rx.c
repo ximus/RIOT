@@ -23,7 +23,6 @@
 #include "kernel_types.h"
 #include "hwtimer.h"
 #include "msg.h"
-#include "transceiver.h"
 
 #include "cpu_conf.h"
 #include "cpu.h"
@@ -86,11 +85,11 @@ void cc110x_rx_handler(void)
 #endif
 
         /* notify transceiver thread if any */
-        if (transceiver_pid != KERNEL_PID_UNDEF) {
+        if (cc110x_client_pid != KERNEL_PID_UNDEF) {
             msg_t m;
-            m.type = (uint16_t) RCV_PKT_CC1100;
+            m.type = (uint16_t) CC1100_PKT_RCV_MSG_TYPE;
             m.content.value = rx_buffer_next;
-            msg_send_int(&m, transceiver_pid);
+            msg_send_int(&m, cc110x_client_pid);
         }
 
         /* shift to next buffer element */

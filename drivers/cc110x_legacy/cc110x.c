@@ -46,12 +46,14 @@ static void reset(void);
 static void power_up_reset(void);
 static void write_register(uint8_t r, uint8_t value);
 
+volatile kernel_pid_t cc110x_client_pid = KERNEL_PID_UNDEF;
+
 /*---------------------------------------------------------------------------*
  *                              Radio Driver API                             *
  *---------------------------------------------------------------------------*/
 void cc110x_init(kernel_pid_t tpid)
 {
-    transceiver_pid = tpid;
+    cc110x_client_pid = tpid;
     DEBUG("Transceiver PID: %" PRIkernel_pid "\n", transceiver_pid);
 
     rx_buffer_next = 0;

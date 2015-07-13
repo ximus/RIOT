@@ -27,11 +27,12 @@
 #include "radio/types.h"
 #include "cc110x-config.h"
 #include "kernel_types.h"
-#include "transceiver.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define CC1100_PKT_RCV_MSG_TYPE (0x6359) /* chosen randomly */
 
 #define CC1100_MAX_DATA_LENGTH      (58)
 

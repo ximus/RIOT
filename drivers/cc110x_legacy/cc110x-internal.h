@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+extern volatile kernel_pid_t cc110x_client_pid;
+
 #define FIXED_PKTLEN        (0x00)      ///< Fixed length packets, length configured in PKTLEN register.
 #define VARIABLE_PKTLEN     (0x01)      ///< Variable length packets, packet length configured by the first
                                         ///< byte after synch word.
