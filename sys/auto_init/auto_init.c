@@ -52,6 +52,10 @@
 #include "vtimer.h"
 #endif
 
+#ifdef MODULE_WTIMER
+#include "wtimer.h"
+#endif
+
 #ifdef MODULE_RTC
 #include "periph/rtc.h"
 #endif
@@ -110,6 +114,10 @@
 #ifdef MODULE_DEV_ETH_AUTOINIT
 #include "net/dev_eth.h"
 #include "dev_eth_autoinit.h"
+#endif
+
+#ifdef MODULE_FIB
+#include "net/ng_fib.h"
 #endif
 
 #define ENABLE_DEBUG (0)
@@ -240,6 +248,10 @@ void auto_init(void)
     DEBUG("Auto init vtimer module.\n");
     vtimer_init();
 #endif
+#ifdef MODULE_WTIMER
+    DEBUG("Auto init wtimer module.\n");
+    wtimer_init();
+#endif
 #ifdef MODULE_UART0
     DEBUG("Auto init uart0 module.\n");
     board_uart0_init();
@@ -314,6 +326,10 @@ void auto_init(void)
 #ifdef MODULE_NG_UDP
     DEBUG("Auto init UDP module.\n");
     ng_udp_init();
+#endif
+#ifdef MODULE_FIB
+    DEBUG("Auto init FIB module.\n");
+    fib_init();
 #endif
 
 

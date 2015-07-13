@@ -17,8 +17,8 @@
  * @author      Joakim Gebart <joakim.gebart@eistec.se>
  */
 
-#ifndef MULLE_PERIPH_CONF_H
-#define MULLE_PERIPH_CONF_H
+#ifndef MULLE_PERIPH_CONF_H_
+#define MULLE_PERIPH_CONF_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -468,7 +468,6 @@ extern "C"
  * @name GPIO configuration
  * @{
  */
-#define GPIO_NUMOF          27
 #define GPIO_0_EN           1
 #define GPIO_1_EN           1
 #define GPIO_2_EN           1
@@ -812,5 +811,5 @@ extern "C"
 }
 #endif
 
-#endif /* MULLE_PERIPH_CONF_H */
+#endif /* MULLE_PERIPH_CONF_H_ */
 /** @} */

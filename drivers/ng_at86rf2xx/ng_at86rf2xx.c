@@ -65,11 +65,11 @@ int ng_at86rf2xx_init(ng_at86rf2xx_t *dev, spi_t spi, spi_speed_t spi_speed,
     /* initialise SPI */
     spi_init_master(dev->spi, SPI_CONF_FIRST_RISING, spi_speed);
     /* initialise GPIOs */
-    gpio_init_out(dev->cs_pin, GPIO_NOPULL);
+    gpio_init(dev->cs_pin, GPIO_DIR_OUT, GPIO_NOPULL);
     gpio_set(dev->cs_pin);
-    gpio_init_out(dev->sleep_pin, GPIO_NOPULL);
+    gpio_init(dev->sleep_pin, GPIO_DIR_OUT, GPIO_NOPULL);
     gpio_clear(dev->sleep_pin);
-    gpio_init_out(dev->reset_pin, GPIO_NOPULL);
+    gpio_init(dev->reset_pin, GPIO_DIR_OUT, GPIO_NOPULL);
     gpio_set(dev->reset_pin);
     gpio_init_int(dev->int_pin, GPIO_NOPULL, GPIO_RISING, _irq_handler, dev);
 
@@ -133,6 +133,7 @@ void ng_at86rf2xx_reset(ng_at86rf2xx_t *dev)
     /* set default options */
     ng_at86rf2xx_set_option(dev, NG_AT86RF2XX_OPT_AUTOACK, true);
     ng_at86rf2xx_set_option(dev, NG_AT86RF2XX_OPT_CSMA, true);
+    ng_at86rf2xx_set_option(dev, NG_AT86RF2XX_OPT_TELL_RX_START, false);
     ng_at86rf2xx_set_option(dev, NG_AT86RF2XX_OPT_TELL_RX_END, true);
     /* set default protocol */
 #ifdef MODULE_NG_SIXLOWPAN
@@ -146,9 +147,18 @@ void ng_at86rf2xx_reset(ng_at86rf2xx_t *dev)
 #ifdef MODULE_NG_AT86RF212B
     ng_at86rf2xx_set_freq(dev,NG_AT86RF2XX_FREQ_915MHZ);
 #endif
+
+    /* don't populate masked interrupt flags to IRQ_STATUS register */
+    uint8_t tmp = ng_at86rf2xx_reg_read(dev, NG_AT86RF2XX_REG__TRX_CTRL_1);
+    tmp &= ~(NG_AT86RF2XX_TRX_CTRL_1_MASK__IRQ_MASK_MODE);
+    ng_at86rf2xx_reg_write(dev, NG_AT86RF2XX_REG__TRX_CTRL_1, tmp);
+
     /* enable interrupts */
     ng_at86rf2xx_reg_write(dev, NG_AT86RF2XX_REG__IRQ_MASK,
                           NG_AT86RF2XX_IRQ_STATUS_MASK__TRX_END);
+    /* clear interrupt flags */
+    ng_at86rf2xx_reg_read(dev, NG_AT86RF2XX_REG__IRQ_STATUS);
+
     /* go into RX state */
     ng_at86rf2xx_set_state(dev, NG_AT86RF2XX_STATE_RX_AACK_ON);
 

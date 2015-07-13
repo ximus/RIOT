@@ -18,8 +18,8 @@
  * @author      Andreas "Paul" Pauli <andreas.pauli@haw-hamburg.de>
  */
 
-#ifndef __PERIPH_CONF_H
-#define __PERIPH_CONF_H
+#ifndef PERIPH_CONF_H_
+#define PERIPH_CONF_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,7 +146,6 @@ extern "C" {
  * @name GPIO configuration
  * @{
  */
-#define GPIO_NUMOF          (32U)
 #define GPIO_0_EN           1
 #define GPIO_1_EN           1
 #define GPIO_2_EN           1
@@ -179,6 +178,8 @@ extern "C" {
 #define GPIO_29_EN          1
 #define GPIO_30_EN          1
 #define GPIO_31_EN          1
+
+/* interrupt priority */
 #define GPIO_IRQ_PRIO       1
 
 /* GPIO channel 0 config */
@@ -378,5 +379,5 @@ extern "C" {
 }
 #endif
 
-#endif /* __PERIPH_CONF_H */
+#endif /* PERIPH_CONF_H_ */
 /** @} */

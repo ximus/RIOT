@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <errno.h>
 #include "thread.h"
 #include "mutex.h"
@@ -408,6 +409,15 @@ int fib_get_next_hop(kernel_pid_t *iface_id,
     DEBUG("[fib_get_next_hop]");
     size_t count = 1;
     fib_entry_t *entry[count];
+
+    if( iface_id == NULL
+        || next_hop == NULL
+        || next_hop_size == NULL
+        || next_hop_flags == NULL
+        || dst == NULL) {
+            mutex_unlock(&mtx_access);
+            return -EINVAL;
+        }
 
     int ret = fib_find_entry(dst, dst_size, &(entry[0]), &count);
     if (!(ret == 0 || ret == 1)) {
