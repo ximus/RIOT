@@ -18,6 +18,7 @@
  * @}
  */
 
+#ifdef MODULE_PS
 #include "ps.h"
 
 int _ps_handler(int argc, char **argv)
@@ -29,3 +30,4 @@ int _ps_handler(int argc, char **argv)
 
     return 0;
 }
+#endif
