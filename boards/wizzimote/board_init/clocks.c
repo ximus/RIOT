@@ -5,7 +5,7 @@ void cc430_clocks_init(void)
     uint16_t selref_32k;
     uint16_t sela_32k;
 
-    #ifdef MSP430_HAS_EXTERNAL_CRYSTAL
+#ifndef MSP430_HAS_EXTERNAL_CRYSTAL
     {
         // Board not populated with external oscillator, use internal
         selref_32k = SELREF__REFOCLK;
@@ -28,8 +28,8 @@ void cc430_clocks_init(void)
         // Clear OFIFG fault flag
         SFRIFG1 &= ~OFIFG;
     }
-    #else
-    #warning "Using XT1 as 32K generator"
+#else
+#warning "Using XT1 as 32K generator"
     {
         // Board populated with external oscillator, use external
         selref_32k = SELREF__XT1CLK;
@@ -43,7 +43,7 @@ void cc430_clocks_init(void)
         // Clear OFIFG fault flag
         SFRIFG1 &= ~OFIFG;
     }
-    #endif
+#endif
 
     // ---------------------------------------------------------------------
     // Configure CPU clock for 19.92MHz
