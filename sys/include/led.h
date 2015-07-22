@@ -22,6 +22,7 @@
  */
 
 #include "stdint.h"
+#include "board_leds.h"
 
 #ifndef LED_CLIENTS_MAX
 #define LED_CLIENTS_MAX (3)
@@ -32,8 +33,16 @@ void led_init(void);
 int led_aquire(void);
 int led_release(void);
 
-int led_on(uint8_t);
-int led_off(uint8_t);
-int led_toggle(uint8_t);
+int led_on(uint8_t leds);
+int led_off(uint8_t leds);
+int led_toggle(uint8_t leds);
+
+/**
+ * Only supports one blink interval per client, common to all client's leds.
+ * @param  leds        leds bit field
+ * @param  interval_ms ms between led blinks
+ * @return             0 on success or -1 on error
+ */
+int led_blink(uint8_t leds, uint16_t interval_ms);
 
 #endif /* end of include guard: LED_H__ */
