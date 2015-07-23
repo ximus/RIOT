@@ -5,7 +5,7 @@ void cc430_clocks_init(void)
     uint16_t selref_32k;
     uint16_t sela_32k;
 
-#ifndef MSP430_HAS_EXTERNAL_CRYSTAL
+#if !MSP430_HAS_EXTERNAL_CRYSTAL
     {
         // Board not populated with external oscillator, use internal
         selref_32k = SELREF__REFOCLK;
@@ -85,10 +85,10 @@ void cc430_clocks_init(void)
 
     // Select Sources for UCS generated clocks
     // Set ACLK to 32768 Hz from 32K CLK
-    // Set SMCLK to 2.49625 from DCO/8
-    // Set MCLK to 19.97 MHz from DCOCLK
+    // Set SMCLK to 4.997120 MHz from DCO/4
+    // Set MCLK to 19.988480 MHz from DCOCLK
     // Divider selection for ACLK, SMCLK, MCLK
-    UCSCTL5 = DIVA__1 | DIVS__8 | DIVM__1;
+    UCSCTL5 = DIVA__1 | DIVS__4 | DIVM__1;
     // Source selection
     UCSCTL4 = sela_32k | SELS__DCOCLK | SELM__DCOCLK;
 

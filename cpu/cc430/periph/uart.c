@@ -31,20 +31,6 @@
 #include "msp430.h"
 
 
-// BaudRate is 115200
-// BitCLK is SMCLK
-// BR1:0 = Floor(BitCLK/BaudRate)
-// MCTL  = Round(((BitCLK/BaudRate) - Floor(BitCLK/BaudRate)) * 8) << 1
-#define BAUD_RATE_MAJOR   0x15
-#define BAUD_RATE_MINOR   0x00
-#define MCTL              0x0A
-
-// Safeguard. Helps guarantee changes in SMCLK are reflected here.
-// update this conditional upon re-calculation
-#if MSP430_INITIAL_SMCLK_SPEED != 2498560uL
- #warning "UART baudrate calculations are invalid"
-#endif
-
 
 typedef enum {
     BLOCK,
@@ -79,11 +65,19 @@ void uart_init(void)
     UCA0CTL1  = UCSWRST;         /* hold UART module in reset state
                                     while we configure it */
 
-    UCA0CTL1 |= UCSSEL_2;          /* source UART's BRCLK from SMCLK  */
+    UCA0CTL1 |= UCSSEL__SMCLK;   /* source UART's BRCLK from SMCLK  */
 
-    UCA0BR0   = BAUD_RATE_MAJOR;
-    UCA0BR1   = BAUD_RATE_MINOR;
-    UCA0MCTL  = MCTL;
+// Safeguard. Helps guarantee changes in SMCLK are reflected here
+#if MSP430_INITIAL_SMCLK_SPEED != 4997120uL
+#warning "UART baudrate calculations are invalid"
+#endif
+
+    // BaudRate is 112500
+    // BR1:0 = Floor(BitCLK/BaudRate)
+    // MCTL  = Round(((BitCLK/BaudRate) - Floor(BitCLK/BaudRate)) * 8) << 1
+    UCA0BR0   = 0x02;
+    UCA0BR1   = 0x00;
+    UCA0MCTL  = UCBRS_6 | UCBRF_11 | UCOS16;
 
     // clear interupt before enable
     UCA0IE &= ~UCRXIFG;
