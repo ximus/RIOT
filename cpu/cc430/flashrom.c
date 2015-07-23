@@ -23,8 +23,8 @@
 #include "cpu.h"
 #include "irq.h"
 
-static uint8_t prepare(void);
-static void finish(uint8_t istate);
+static inline uint8_t prepare(void);
+static inline void finish(uint8_t istate);
 static inline void busy_wait(void);
 
 
@@ -65,13 +65,13 @@ int flashrom_write(uint8_t *dst, const uint8_t *src, size_t size)
 }
 
 
-static uint8_t prepare(void)
+static inline uint8_t prepare(void)
 {
     // no need to disable watchdog timer, not enabled by platform
     return disableIRQ();
 }
 
-void finish(uint8_t istate)
+static inline void finish(uint8_t istate)
 {
     restoreIRQ(istate);
 }

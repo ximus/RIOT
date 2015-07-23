@@ -74,7 +74,7 @@ static inline bool _context_overlaps_iid(ng_sixlowpan_ctx_t *ctx,
 {
     uint8_t byte_mask[] = {0xff, 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01};
 
-    if (ctx == NULL) {
+    if ((ctx == NULL) || (ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_COMP)) {
         return false;
     }
 
@@ -329,10 +329,10 @@ bool ng_sixlowpan_iphc_decode(ng_pktsnip_t *pkt)
             break;
 
         case IPHC_M_DAC_DAM_M_8:
-            /* ffXX::XX: */
+            /* ff02::XX: */
             ng_ipv6_addr_set_unspecified(&ipv6_hdr->dst);
             ipv6_hdr->dst.u8[0] = 0xff;
-            ipv6_hdr->dst.u8[1] = iphc_hdr[payload_offset++];
+            ipv6_hdr->dst.u8[1] = 0x02;
             ipv6_hdr->dst.u8[15] = iphc_hdr[payload_offset++];
             break;
 
@@ -357,7 +357,7 @@ bool ng_sixlowpan_iphc_decode(ng_pktsnip_t *pkt)
                 payload_offset += 4;
 
                 ctx->prefix_len = orig_ctx_len;
-            } while (0);    /* ANSI-C compatible block creation for orig_ctx_len allocation*/
+            } while (0);    /* ANSI-C compatible block creation for orig_ctx_len allocation */
             break;
 
         default:
@@ -399,7 +399,7 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
 
     /* set initial dispatch value*/
     iphc_hdr[IPHC1_IDX] = NG_SIXLOWPAN_IPHC1_DISP;
-    iphc_hdr[2] = 0;
+    iphc_hdr[IPHC2_IDX] = 0;
 
     /* check for available contexts */
     if (!ng_ipv6_addr_is_unspecified(&(ipv6_hdr->src))) {
@@ -412,8 +412,12 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
 
     /* if contexts available and both != 0 */
     /* since this moves inline_pos we have to do this ahead*/
-    if (((src_ctx != NULL) && (src_ctx->id != 0)) ||
-        ((dst_ctx != NULL) && (dst_ctx->id != 0))) {
+    if (((src_ctx != NULL) &&
+         ((src_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_CID_MASK) != 0) &&
+         (src_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_COMP)) ||
+        ((dst_ctx != NULL) &&
+         ((dst_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_CID_MASK) != 0) &&
+         (dst_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_COMP))) {
         /* add context identifier extension */
         iphc_hdr[IPHC2_IDX] |= NG_SIXLOWPAN_IPHC2_CID_EXT;
         iphc_hdr[CID_EXT_IDX] = 0;
@@ -485,51 +489,52 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
         iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_UNSPEC;
     }
     else {
-        if (src_ctx != NULL) {
+        if ((src_ctx != NULL) && (src_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_COMP)) {
             /* stateful source address compression */
             iphc_hdr[IPHC2_IDX] |= NG_SIXLOWPAN_IPHC2_SAC;
 
-            if (src_ctx->id != 0) { /* context id is elided */
-                iphc_hdr[CID_EXT_IDX] |= (src_ctx->id << 4);
+            if (((src_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_CID_MASK) != 0)) {
+                iphc_hdr[CID_EXT_IDX] |= ((src_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_CID_MASK) << 4);
             }
         }
 
         if ((src_ctx != NULL) || ng_ipv6_addr_is_link_local(&(ipv6_hdr->src))) {
             eui64_t iid;
+            iid.uint64.u64 = 0;
 
             if ((netif_hdr->src_l2addr_len == 2) ||
                 (netif_hdr->src_l2addr_len == 4) ||
                 (netif_hdr->src_l2addr_len == 8)) {
+                /* prefer to create IID from netif header if available */
                 ng_ieee802154_get_iid(&iid, ng_netif_hdr_get_src_addr(netif_hdr),
                                       netif_hdr->src_l2addr_len);
+            }
+            else {
+                /* but take from driver otherwise */
+                ng_netapi_get(netif_hdr->if_pid, NETCONF_OPT_IPV6_IID, 0, &iid,
+                              sizeof(eui64_t));
+            }
+
+            if ((ipv6_hdr->src.u64[1].u64 == iid.uint64.u64) ||
+                _context_overlaps_iid(src_ctx, &ipv6_hdr->src, &iid)) {
+                /* 0 bits. The address is derived from link-layer address */
+                iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_L2;
+                addr_comp = true;
+            }
+            else if ((byteorder_ntohl(ipv6_hdr->src.u32[2]) == 0x000000ff) &&
+                     (byteorder_ntohs(ipv6_hdr->src.u16[6]) == 0xfe00)) {
+                /* 16 bits. The address is derived using 16 bits carried inline */
+                iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_16;
+                memcpy(iphc_hdr + inline_pos, ipv6_hdr->src.u16 + 7, 2);
+                inline_pos += 2;
                 addr_comp = true;
             }
             else {
-                if (ng_netapi_get(netif_hdr->if_pid, NETCONF_OPT_IPV6_IID, 0,
-                                  &iid, sizeof(eui64_t)) >= 0) {
-                    addr_comp = true;
-                }
-            }
-
-            if (addr_comp) {
-                if ((ipv6_hdr->src.u64[1].u64 == iid.uint64.u64) ||
-                    _context_overlaps_iid(src_ctx, &ipv6_hdr->src, &iid)) {
-                    /* 0 bits. The address is derived from link-layer address */
-                    iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_L2;
-                }
-                else if ((byteorder_ntohl(ipv6_hdr->src.u32[2]) == 0x000000ff) &&
-                         (byteorder_ntohs(ipv6_hdr->src.u16[6]) == 0xfe00)) {
-                    /* 16 bits. The address is derived using 16 bits carried inline */
-                    iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_16;
-                    memcpy(iphc_hdr + inline_pos, ipv6_hdr->src.u16 + 7, 2);
-                    inline_pos += 2;
-                }
-                else {
-                    /* 64 bits. The address is derived using 64 bits carried inline */
-                    iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_64;
-                    memcpy(iphc_hdr + inline_pos, ipv6_hdr->src.u64 + 1, 8);
-                    inline_pos += 8;
-                }
+                /* 64 bits. The address is derived using 64 bits carried inline */
+                iphc_hdr[IPHC2_IDX] |= IPHC_SAC_SAM_64;
+                memcpy(iphc_hdr + inline_pos, ipv6_hdr->src.u64 + 1, 8);
+                inline_pos += 8;
+                addr_comp = true;
             }
         }
 
@@ -552,7 +557,7 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
             (ipv6_hdr->dst.u32[1].u32 == 0) &&
             (ipv6_hdr->dst.u16[4].u16 == 0)) {
             /* if multicast address is of format ff02::XX */
-            if ((ipv6_hdr->dst.u8[1] == 2) &&
+            if ((ipv6_hdr->dst.u8[1] == 0x02) &&
                 (ipv6_hdr->dst.u32[2].u32 == 0) &&
                 (ipv6_hdr->dst.u16[6].u16 == 0) &&
                 (ipv6_hdr->dst.u8[14] == 0)) {
@@ -573,11 +578,11 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
             }
             /* if multicast address is of format ffXX::XX:XXXX:XXXX */
             else if (ipv6_hdr->dst.u8[10] == 0) {
-                /* 32 bits. The address is derived using 32 bits carried inline */
-                iphc_hdr[IPHC2_IDX] |= IPHC_M_DAC_DAM_M_32;
+                /* 48 bits. The address is derived using 48 bits carried inline */
+                iphc_hdr[IPHC2_IDX] |= IPHC_M_DAC_DAM_M_48;
                 iphc_hdr[inline_pos++] = ipv6_hdr->dst.u8[1];
-                memcpy(iphc_hdr + inline_pos, ipv6_hdr->dst.u8 + 13, 3);
-                inline_pos += 3;
+                memcpy(iphc_hdr + inline_pos, ipv6_hdr->dst.u8 + 11, 5);
+                inline_pos += 5;
                 addr_comp = true;
             }
         }
@@ -592,9 +597,11 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
 
             ctx = ng_sixlowpan_ctx_lookup_addr(&unicast_prefix);
 
-            if ((ctx != NULL) && (ctx->prefix_len == ipv6_hdr->dst.u8[3])) {
-                /* Unicast prefix based IPv6 multicast address with given
-                 * context for unicast prefix -> context based compression */
+            if ((ctx != NULL) && (ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_COMP) &&
+                (ctx->prefix_len == ipv6_hdr->dst.u8[3])) {
+                /* Unicast prefix based IPv6 multicast address
+                 * (https://tools.ietf.org/html/rfc3306) with given context
+                 * for unicast prefix -> context based compression */
                 iphc_hdr[IPHC2_IDX] |= NG_SIXLOWPAN_IPHC2_DAC;
                 iphc_hdr[inline_pos++] = ipv6_hdr->dst.u8[1];
                 iphc_hdr[inline_pos++] = ipv6_hdr->dst.u8[2];
@@ -604,8 +611,8 @@ bool ng_sixlowpan_iphc_encode(ng_pktsnip_t *pkt)
             }
         }
     }
-    else if (((dst_ctx != NULL) || ng_ipv6_addr_is_link_local(&ipv6_hdr->dst)) &&
-             (netif_hdr->dst_l2addr_len > 0)) {
+    else if ((((dst_ctx != NULL) && (dst_ctx->flags_id & NG_SIXLOWPAN_CTX_FLAGS_COMP)) ||
+              ng_ipv6_addr_is_link_local(&ipv6_hdr->dst)) && (netif_hdr->dst_l2addr_len > 0)) {
         eui64_t iid;
 
         ng_ieee802154_get_iid(&iid, ng_netif_hdr_get_dst_addr(netif_hdr),

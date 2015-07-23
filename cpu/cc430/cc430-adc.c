@@ -47,6 +47,7 @@
  */
 
 
+#include "irq.h"
 #include "cpu.h"
 #include "cc430-adc.h"
 #include "hwtimer.h"
