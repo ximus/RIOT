@@ -215,10 +215,11 @@ int wtimer_remove(wtimer_t *timer);
  *
  * This value specifies the time a timer will be late if uncorrected.
  *
- * E.g., with WTIMER_OVERHEAD == 0
- * now=wtimer_now();
- * wtimer_set(&timer, X);
- * overhead=X-now
+ * eg: with WTIMER_OVERHEAD == 0
+ * wtimer_t timer;
+ * uint32_t now = wtimer_now();
+ * wtimer_set(&timer, 12345);
+ * uint32_t overhead = wtimer_now() - now;
  *
  * wtimer automatically substracts WTIMER_OVERHEAD from a timer's target time.
  *
@@ -254,6 +255,11 @@ int wtimer_remove(wtimer_t *timer);
  * This value specifies the time a wtimer_usleep_until will be late
  * if uncorrected.
  *
+ * eg: with WTIMER_USLEEP_UNTIL_OVERHEAD == 0
+ * uint32_t now = wtimer_now();
+ * wtimer_usleep_until(&now, 12345);
+ * uint32_t overhead = wtimer_now() - now;
+ *
  * This is supposed to be defined per-device in e.g., periph_conf.h.
  */
 #define WTIMER_USLEEP_UNTIL_OVERHEAD 10
@@ -268,7 +274,7 @@ extern volatile uint32_t _high_cnt;
 #endif
 
 /**
- * @brief returns the (masked) low-level timer counter value.
+ * @brief returns the low-level timer counter value.
  */
 static inline uint32_t _wtimer_now(void)
 {

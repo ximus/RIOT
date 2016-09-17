@@ -120,7 +120,7 @@
 #include "net/ng_fib.h"
 #endif
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #include "debug.h"
 
 #ifndef CONF_RADIO_ADDR
@@ -246,7 +246,7 @@ void auto_init(void)
 
 #ifdef MODULE_VTIMER
     DEBUG("Auto init vtimer module.\n");
-    vtimer_init();
+    // vtimer_init();
 #endif
 #ifdef MODULE_WTIMER
     DEBUG("Auto init wtimer module.\n");

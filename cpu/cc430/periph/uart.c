@@ -52,9 +52,8 @@ static void (*char_receive_callback)(uint8_t c);
 
 void set_rx_mode(uart_mode_t mode);
 
-// Runs
-// defaults to char mode when no block transfer is active
-// defaults to 112000 bps
+// Runs in char mode when no block transfer is active
+// defaults to 112500 bps
 void uart_init(void)
 {
     // SMCLK, parity off, LSB-first, 8N1, a uart
@@ -88,7 +87,7 @@ void uart_init(void)
     set_rx_mode(CHAR);
 }
 
-void set_char_receive_callback(void (*rx_callback)(uint8_t))
+void uart_on_char_receive(void (*rx_callback)(uint8_t))
 {
     char_receive_callback = rx_callback;
 }
@@ -112,7 +111,7 @@ void set_tx_mode(uart_mode_t mode)
         DMA2CTL &= ~(DMAIE | DMAEN);   /* disable dma interrupt */
     }
     else { /* BLOCK */
-        DMA2CTL |= DMAIE | DMAEN;   /* enable dma counter interrupt */
+        DMA2CTL |= DMAIE | DMAEN;      /* enable dma counter interrupt */
     }
     uart.tx_mode = mode;
 }
@@ -165,21 +164,41 @@ int uart_block_received_count(void) {
     return -1;
 }
 
-
-
-
+#ifdef BUFFER_PUTCHAR
+char putchar_buffer[1000] = {0};
+uint16_t putchar_buffer_pos = 0;
+#endif
+/**
+ * TODO(max): big issue here when stdlib putchar is used
+ * and uart.tx_mode is disregarded
+ */
+#ifdef MSPGCC
 int putchar(int c)
 {
-    /* wait for a block transfer to finish */
-    // TODO: this could take awhile, maybe putchar should fail
-    // while in block mode.
-    while (uart.tx_mode != CHAR);
+    #ifdef BUFFER_PUTCHAR
+    putchar_buffer[putchar_buffer_pos++] = c;
+    if (putchar_buffer_pos == sizeof(putchar_buffer))
+        putchar_buffer_pos = 0;
+    #else
+    /**
+     * TODO(max): this needs thought
+     * if we are in BLOCK mode, then we shouldn't interveave the BLOCK
+     * transfer with calls to putchar(). Initially I had calls to putchar wait:
+     * `while (uart.tx_mode != CHAR);`
+     * but it seems like too great of a risk for deadlocks.
+     * So for now, just drop calls to putchar() and put the responsibility
+     * in developer's hand to not call putchar() in a meaningful way during
+     * block transfers.
+     */
     /* load TX byte buffer */
+
     UCA0TXBUF = (uint8_t) c;
     /* wait for transmission to end */
     while (!(UCA0IFG & UCTXIFG));
+    #endif
     return c;
 }
+#endif /* MSPGCC */
 
 /**
  * \brief the interrupt handler for UART reception
@@ -208,7 +227,7 @@ interrupt(USCI_A0_VECTOR) __attribute__ ((naked)) uart0irq(void)
         c = UCA0RXBUF;
     } else {
         /* All went well -> let's signal the reception to adequate callbacks */
-        /* ideally should not read UCA0RXBUF if both uart0 and callback not defined*/
+        /* ideally should not read UCA0RXBUF if neither uart0 and char_receive_callback defined*/
         c = UCA0RXBUF;
 #ifdef MODULE_UART0
         if (uart0_handler_pid != KERNEL_PID_UNDEF) {

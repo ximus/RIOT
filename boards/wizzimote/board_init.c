@@ -14,9 +14,10 @@
 #include "board.h"
 #include "port_conf.h"
 #include "cpu.h"
-#include "leds.h"
+#include "board_leds.h"
 #include "irq.h"
 #include "debug.h"
+#include "uart.h"
 #include "cc430f5137.h"
 
 #include "board_init/clocks.c"

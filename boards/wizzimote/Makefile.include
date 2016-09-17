@@ -5,16 +5,15 @@ export CPU = cc430
 export MCU = cc430f5137
 
 # toolchain config
-export PREFIX = msp430-
 export CC = $(PREFIX)gcc
 export AR = $(PREFIX)ar
-export CFLAGS += -Wstrict-prototypes -Os -Wall -mmcu=$(MCU) -D CC430
+export CFLAGS += -Wstrict-prototypes -Os -Wall -mmcu=$(MCU) -D CC430 -fdata-sections -ffunction-sections
 export ASFLAGS += -mmcu=$(MCU) --defsym $(MCU)=1
 export AS = $(PREFIX)as
 export LINK = $(PREFIX)gcc
 export SIZE = $(PREFIX)size
 export OBJCOPY = $(PREFIX)objcopy
-export LINKFLAGS = -mmcu=$(MCU) -lgcc $(BINDIR)msp430_common/startup.o
+export LINKFLAGS = -mmcu=$(MCU) -Wl,--gc-sections -lgcc $(BINDIR)msp430_common/startup.o
 export USEMODULE += msp430_common
 export OFLAGS = -O ihex
 export TERMPROG = $(RIOTBASE)/dist/tools/pyterm/pyterm

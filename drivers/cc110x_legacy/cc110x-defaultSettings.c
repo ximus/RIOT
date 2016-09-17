@@ -22,7 +22,7 @@
 #include "cc110x_legacy.h"
 
 // Default PA table index (output power)
-#define PATABLE                 (11)
+#define PATABLE_INDEX   (1)
 
 /**
  * Usable, non overlapping channels and corresponding frequencies
@@ -72,9 +72,9 @@ char cc110x_conf[] = {
     CC1100_DEFAULT_CHANNR * 10, // CHANNR
     0x0B, // FSCTRL1
     0x00, // FSCTRL0
-    0x21, // FREQ2
-    0x71, // FREQ1
-    0x7A, // FREQ0
+    0x10, // FREQ2
+    0xB1, // FREQ1
+    0x3B, // FREQ0
     0x2D, // MDMCFG4
     0xF8, // MDMCFG3
     0x73, // MDMCFG2
@@ -102,7 +102,7 @@ char cc110x_conf[] = {
     0x00  // padding to 4 bytes
 };
 
-uint8_t pa_table_index = PATABLE; ///< Current PATABLE Index
+uint8_t pa_table_index = PATABLE_INDEX; ///< Current PATABLE Index
 uint8_t pa_table[] = {        ///< PATABLE with available output powers
               0x00,         ///< -52 dBm
               0x03,         ///< -30 dBm

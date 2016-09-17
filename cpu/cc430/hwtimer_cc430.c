@@ -53,24 +53,24 @@ void timerA_init(void)
     TA0CTL |= MC_2;
 }
 
-interrupt(TIMER0_A0_VECTOR) __attribute__((naked)) timer0_a0_isr(void)
-{
-    __enter_isr();
+// interrupt(TIMER0_A0_VECTOR) __attribute__((naked)) timer0_a0_isr(void)
+// {
+//     __enter_isr();
 
-    timer_unset(0);
-    int_handler(0);
+//     timer_unset(0);
+//     int_handler(0);
 
-    __exit_isr();
-}
+//     __exit_isr();
+// }
 
-interrupt(TIMER0_A1_VECTOR) __attribute__((naked)) timer0_a1_5_isr(void)
-{
-    __enter_isr();
+// interrupt(TIMER0_A1_VECTOR) __attribute__((naked)) timer0_a1_5_isr(void)
+// {
+//     __enter_isr();
 
-    /* determine which CCR has been hit, and fire the appropriate callback */
-    short timer = TA0IV >> 1;
-    timer_unset(timer);
-    int_handler(timer);
+//     /* determine which CCR has been hit, and fire the appropriate callback */
+//     short timer = TA0IV >> 1;
+//     timer_unset(timer);
+//     int_handler(timer);
 
-    __exit_isr();
-}
+//     __exit_isr();
+// }

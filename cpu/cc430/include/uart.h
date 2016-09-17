@@ -3,7 +3,7 @@
  * UART character received when not receiving in block mode.
  */
 void uart_init(void);
-
+void uart_on_char_receive(void (*rx_callback)(uint8_t));
 /**
  * nomenclature: block basically means dma, should
  * I call it uart_dma_ ...?
@@ -31,4 +31,6 @@ void uart_block_send_end(void);
  * Write a character to UART. Blocks until any ongoing block
  * transfer completes.
  */
+#ifdef MSPGCC
 int putchar(int c);
+#endif
